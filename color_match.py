@@ -38,14 +38,6 @@ class ColorMatch:
         self.__m_confidence_level = self.__K_DEFAULT_CONFIDENCE
         self.__m_colors_to_match = list()
 
-    @classmethod
-    def __calculate_distance(cls, color1: Color, color2: Color) -> float:
-        red_diff = color1.red - color2.red
-        green_diff = color1.green - color2.green
-        blue_diff = color1.blue - color2.blue
-        return math.sqrt((red_diff * red_diff + green_diff * green_diff +
-                          blue_diff * blue_diff) / 2)
-
     def add_color_match(self, color: Color) -> None:
         self.__m_colors_to_match.append(color)
 
@@ -61,10 +53,6 @@ class ColorMatch:
         if match.confidence > self.__m_confidence_level:
             return match
         return None
-
-    @classmethod
-    def make_color(cls, r: float, g: float, b: float) -> Color:
-        return ColorShim(r, g, b)
 
     def match_closest_color(self, color: Color) -> ColorMatchResult:
         magnitude = color.red + color.blue + color.green
@@ -84,3 +72,15 @@ class ColorMatch:
                                      1.0 - min_distance)
             return match
         return ColorMatchResult(Color.kBlack, 0.0)
+
+    @classmethod
+    def __calculate_distance(cls, color1: Color, color2: Color) -> float:
+        red_diff = color1.red - color2.red
+        green_diff = color1.green - color2.green
+        blue_diff = color1.blue - color2.blue
+        return math.sqrt((red_diff * red_diff + green_diff * green_diff +
+                          blue_diff * blue_diff) / 2)
+
+    @classmethod
+    def make_color(cls, r: float, g: float, b: float) -> Color:
+        return ColorShim(r, g, b)
