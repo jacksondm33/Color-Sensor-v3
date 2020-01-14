@@ -54,11 +54,11 @@ class ColorSensorV3:
             self.blue = b
             self.ir = ir
 
-    #
-    # Constructs a ColorSensor.
-    #
-    # :param port: The I2C port the color sensor is attached to
-    #
+    """
+    Constructs a ColorSensor.
+
+    :param port: The I2C port the color sensor is attached to
+    """
     def __init__(self, port: I2C.Port):
         self.__m_i2c = I2C(port, self.__K_ADDRESS)
         self.__m_sim_device = SimDevice.create("REV Color Sensor V3", port.value, self.__K_ADDRESS)
@@ -114,137 +114,108 @@ class ColorSensorV3:
         K_PULSE_100MA = 0x06 # Default value
         K_PULSE_125MA = 0x07
 
+    class LEDPulseFrequency:
+        K_FREQ_60KHZ = 0x18 # Default value
+        K_FREQ_70KHZ = 0x40
+        K_FREQ_80KHZ = 0x28
+        K_FREQ_90KHZ = 0x30
+        K_FREQ_100KHZ = 0x38
+
+    class ProximitySensorResolution:
+        K_PROX_RES_8BIT = 0x00
+        K_PROX_RES_9BIT = 0x08
+        K_PROX_RES_10BIT = 0x10
+        K_PROX_RES_11BIT = 0x18
+
+    class ProximitySensorMeasurementRate:
+        K_PROX_RATE_6MS = 0x01
+        K_PROX_RATE_12MS = 0x02
+        K_PROX_RATE_25MS = 0x03
+        K_PROX_RATE_50MS = 0x04
+        K_PROX_RATE_100MS = 0x05 # Default value
+        K_PROX_RATE_200MS = 0x06
+        K_PROX_RATE_400MS = 0x07
+
+    class ColorSensorResolution:
+        K_COLOR_SENSOR_RES_20BIT = 0x00
+        K_COLOR_SENSOR_RES_19BIT = 0x08
+        K_COLOR_SENSOR_RES_18BIT = 0x10
+        K_COLOR_SENSOR_RES_17BIT = 0x18
+        K_COLOR_SENSOR_RES_16BIT = 0x20
+        K_COLOR_SENSOR_RES_13BIT = 0x28
+
+    class ColorSensorMeasurementRate:
+        K_COLOR_RATE_25MS = 0
+        K_COLOR_RATE_50MS = 1
+        K_COLOR_RATE_100MS = 2
+        K_COLOR_RATE_200MS = 3
+        K_COLOR_RATE_500MS = 4
+        K_COLOR_RATE_1000MS = 5
+        K_COLOR_RATE_2000MS = 7
+
+    """
+    Configure the the IR LED used by the proximity sensor.
+
+    These settings are only needed for advanced users, the defaults
+    will work fine for most teams. Consult the APDS-9151 for more
+    information on these configuration settings and how they will affect
+    proximity sensor measurements.
+
+    :param freq: The pulse modulation frequency for the proximity
+                 sensor LED
+    :param curr: The pulse current for the proximity sensor LED
+    :param pulses: The number of pulses per measurement of the
+                   proximity sensor LED (0-255)
+    """
+    def configure_proximity_sensor_led(self, freq: LEDPulseFrequency, curr: LEDCurrent, pulses: int) -> None:
+        self.write8(Register.K_PROXIMITY_SENSOR_LED, freq | curr)
+        self.write8(Register.K_PROXIMITY_SENSOR_PULSES, byte(pulses))
+
+    """
+    Configure the proximity sensor.
+
+    These settings are only needed for advanced users, the defaults
+    will work fine for most teams. Consult the APDS-9151 for more
+    information on these configuration settings and how they will affect
+    proximity sensor measurements.
+
+    :param res: Bit resolution output by the proximity sensor ADC.
+    :param rate: Measurement rate of the proximity sensor
+    """
+    def configure_proximity_sensor(self, res: ProximitySensorResolution, rate: ProximitySensorMeasurementRate) -> None:
+        self.write8(Register.K_PROXIMITY_SENSOR_RATE, res | rate)
+
+    """
+    Configure the color sensor.
+
+    These settings are only needed for advanced users, the defaults
+    will work fine for most teams. Consult the APDS-9151 for more
+    information on these configuration settings and how they will affect
+    color sensor measurements.
+
+    :param res: Bit resolution output by the respective light sensor ADCs
+    :param rate: Measurement rate of the light sensor
+    :param gain: Gain factor applied to light sensor (color) outputs
+    """
+    def configure_color_sensor(self, res: ColorSensorResolution, rate: ColorSensorMeasurementRate, gain: GainFactor) -> None:
+        self.write8(Register.K_LIGHT_SENSOR_MEASUREMENT_RATE, res | rate)
+        self.write8(Register.K_LIGHT_SENSOR_GAIN, gain)
+
+    """
+    Get the most likely color. Works best when within 2 inches and
+    perpendicular to surface of interest.
+
+    :returns: Color enum of the most likely color, including unknown if
+              the minimum threshold is not met
+    """
+    def get_color(self) -> Color:
+        r = float(self.get_red())
+        g = float(self.get_green())
+        b = float(self.get_blue())
+        mag = r + g + b
+        return ColorShim(r / mag, g / mag, b / mag)
+
 ======== END OF PROGRESS ========
-
-    enum LEDPulseFrequency {
-        kFreq60kHz(0x18), /* default value */
-        kFreq70kHz(0x40),
-        kFreq80kHz(0x28),
-        kFreq90kHz(0x30),
-        kFreq100kHz(0x38);
-
-        public final byte bVal;
-        LEDPulseFrequency(int i) { this.bVal = (byte) i; }
-    }
-
-    enum ProximitySensorResolution {
-        kProxRes8bit(0x00),
-        kProxRes9bit(0x08),
-        kProxRes10bit(0x10),
-        kProxRes11bit(0x18);
-
-        public final byte bVal;
-        ProximitySensorResolution(int i) { this.bVal = (byte) i; }
-    }
-
-    enum ProximitySensorMeasurementRate {
-        kProxRate6ms(0x01),
-        kProxRate12ms(0x02),
-        kProxRate25ms(0x03),
-        kProxRate50ms(0x04),
-        kProxRate100ms(0x05), /* default value */
-        kProxRate200ms(0x06),
-        kProxRate400ms(0x07);
-
-        public final byte bVal;
-        ProximitySensorMeasurementRate(int i) { this.bVal = (byte) i; }
-    }
-
-    enum ColorSensorResolution {
-        kColorSensorRes20bit(0x00),
-        kColorSensorRes19bit(0x08),
-        kColorSensorRes18bit(0x10),
-        kColorSensorRes17bit(0x18),
-        kColorSensorRes16bit(0x20),
-        kColorSensorRes13bit(0x28);
-
-        public final byte bVal;
-        ColorSensorResolution(int i) { this.bVal = (byte) i; }
-    }
-
-    enum ColorSensorMeasurementRate {
-        kColorRate25ms(0),
-        kColorRate50ms(1),
-        kColorRate100ms(2),
-        kColorRate200ms(3),
-        kColorRate500ms(4),
-        kColorRate1000ms(5),
-        kColorRate2000ms(7);
-
-        public final byte bVal;
-        ColorSensorMeasurementRate(int i) { this.bVal = (byte) i; }
-    };
-
-    /**
-     * Configure the the IR LED used by the proximity sensor. 
-     * 
-     * These settings are only needed for advanced users, the defaults 
-     * will work fine for most teams. Consult the APDS-9151 for more 
-     * information on these configuration settings and how they will affect
-     * proximity sensor measurements.
-     * 
-     * @param freq      The pulse modulation frequency for the proximity 
-     *                  sensor LED
-     * @param curr      The pulse current for the proximity sensor LED
-     * @param pulses    The number of pulses per measurement of the 
-     *                  proximity sensor LED (0-255)
-     */
-    public void configureProximitySensorLED(LEDPulseFrequency freq, 
-                                            LEDCurrent curr, 
-                                            int pulses) {
-        write8(Register.kProximitySensorLED, freq.bVal | curr.bVal);
-        write8(Register.kProximitySensorPulses, (byte) pulses);
-    }
-    
-    /**
-     * Configure the proximity sensor.
-     * 
-     * These settings are only needed for advanced users, the defaults 
-     * will work fine for most teams. Consult the APDS-9151 for more 
-     * information on these configuration settings and how they will affect
-     * proximity sensor measurements.
-     * 
-     * @param res   Bit resolution output by the proximity sensor ADC.
-     * @param rate  Measurement rate of the proximity sensor
-     */
-    public void configureProximitySensor(ProximitySensorResolution res, 
-                                         ProximitySensorMeasurementRate rate) {
-        write8(Register.kProximitySensorRate, res.bVal | rate.bVal);
-    }
-    
-    /**
-     * Configure the color sensor.
-     * 
-     * These settings are only needed for advanced users, the defaults 
-     * will work fine for most teams. Consult the APDS-9151 for more 
-     * information on these configuration settings and how they will affect
-     * color sensor measurements.
-     * 
-     * @param res   Bit resolution output by the respective light sensor ADCs
-     * @param rate  Measurement rate of the light sensor
-     * @param gain  Gain factor applied to light sensor (color) outputs
-     */
-    public void configureColorSensor(ColorSensorResolution res, 
-                                     ColorSensorMeasurementRate rate, 
-                                     GainFactor gain) {
-        write8(Register.kLightSensorMeasurementRate, res.bVal | rate.bVal);
-        write8(Register.kLightSensorGain, gain.bVal);
-    }
-
-    /**
-     * Get the most likely color. Works best when within 2 inches and 
-     * perpendicular to surface of interest.
-     * 
-     * @return  Color enum of the most likely color, including unknown if
-     *          the minimum threshold is not met
-     */
-    public Color getColor() {
-        double r = (double)getRed();
-        double g = (double)getGreen();
-        double b = (double)getBlue();
-        double mag = r + g + b;
-        return new ColorShim(r / mag, g / mag, b / mag);
-    }
 
     /**
      * Get the raw proximity value from the sensor ADC (11 bit). This value 
