@@ -26,7 +26,6 @@
 
 import math
 from wpilib import Color
-from wpilib import ColorShim
 from color_match_result import ColorMatchResult
 
 
@@ -57,9 +56,8 @@ class ColorMatch:
     def match_closest_color(self, color: Color) -> ColorMatchResult:
         magnitude = color.red + color.blue + color.green
         if magnitude > 0.0 and len(self.__m_colors_to_match) > 0:
-            normalized = ColorShim(color.red / magnitude,
-                                   color.green / magnitude,
-                                   color.blue / magnitude)
+            normalized = Color(color.red / magnitude, color.green / magnitude,
+                               color.blue / magnitude)
             min_distance = 1.0
             idx = 0
             for i in range(len(self.__m_colors_to_match)):
@@ -83,4 +81,4 @@ class ColorMatch:
 
     @classmethod
     def make_color(cls, r: float, g: float, b: float) -> Color:
-        return ColorShim(r, g, b)
+        return Color(r, g, b)

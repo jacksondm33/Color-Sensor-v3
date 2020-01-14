@@ -28,24 +28,19 @@ from enum import Enum
 from wpilib import I2C
 from wpilib import DriverStation
 from wpilib import Color
-from wpilib import ColorShim
 from hal import SimDevice
-from hal import SimDouble
 
-#
-# REV Robotics Color Sensor V3
-#
+
 class ColorSensorV3:
+    """REV Robotics Color Sensor V3"""
     __K_ADDRESS = 0x52
     __K_PART_ID = 0xC2
 
     # This is a transformation matrix given by the chip
     # manufacturer to transform the raw RGB to CIE XYZ
-    __MATRIX = (
-        (0.048112847, 0.289453437, -0.084950826),
-        (0.030754752, 0.339680186, -0.071569905),
-        (-0.093947499, 0.072838494, 0.34024948)
-    )
+    __MATRIX = ((0.048112847, 0.289453437,
+                 -0.084950826), (0.030754752, 0.339680186, -0.071569905),
+                (-0.093947499, 0.072838494, 0.34024948))
 
     class RawColor:
         def __init__(self, r: int, g: int, b: int, ir: int):
@@ -54,27 +49,32 @@ class ColorSensorV3:
             self.blue = b
             self.ir = ir
 
-    """
-    Constructs a ColorSensor.
-
-    :param port: The I2C port the color sensor is attached to
-    """
     def __init__(self, port: I2C.Port):
+        """
+        Constructs a ColorSensor.
+
+        :param port: The I2C port the color sensor is attached to
+        """
         self.__m_i2c = I2C(port, self.__K_ADDRESS)
-        self.__m_sim_device = SimDevice.create("REV Color Sensor V3", port.value, self.__K_ADDRESS)
+        self.__m_sim_device = SimDevice.create("REV Color Sensor V3",
+                                               port.value, self.__K_ADDRESS)
         if self.__m_sim_device is not None:
-            self.__m_sim_r = self.__m_sim_device.createDouble("Red", False, 0.0)
-            self.__m_sim_g = self.__m_sim_device.createDouble("Green", False, 0.0)
-            self.__m_sim_b = self.__m_sim_device.createDouble("Blue", False, 0.0)
-            self.__m_sim_ir = self.__m_sim_device.createDouble("IR", False, 0.0)
-            self.__m_sim_prox = self.__m_sim_device.createDouble("Proximity", False, 0.0)
+            self.__m_sim_r = self.__m_sim_device.createDouble(
+                "Red", False, 0.0)
+            self.__m_sim_g = self.__m_sim_device.createDouble(
+                "Green", False, 0.0)
+            self.__m_sim_b = self.__m_sim_device.createDouble(
+                "Blue", False, 0.0)
+            self.__m_sim_ir = self.__m_sim_device.createDouble(
+                "IR", False, 0.0)
+            self.__m_sim_prox = self.__m_sim_device.createDouble(
+                "Proximity", False, 0.0)
             return
-        if not self.check_device_id():
+        if not self.__check_device_id():
             return
-        self.initialize_device()
+        self.__initialize_device()
         # Clear the reset flag
         self.has_reset()
-
 
     class Register(Enum):
         K_MAIN_CTRL = 0x00
@@ -92,10 +92,10 @@ class ColorSensorV3:
         K_DATA_RED = 0x13
 
     class MainControl(Enum):
-        K_RGB_MODE = 0x04 # If bit is set to 1, color channels are activated
-        K_LIGHT_SENSOR_ENABLE = 0x02 # Enable light sensor
-        K_PROXIMITY_SENSOR_ENABLE = 0x01 # Proximity sensor active
-        OFF = 0x00 # Nothing on
+        K_RGB_MODE = 0x04  # If bit is set to 1, color channels are activated
+        K_LIGHT_SENSOR_ENABLE = 0x02  # Enable light sensor
+        K_PROXIMITY_SENSOR_ENABLE = 0x01  # Proximity sensor active
+        OFF = 0x00  # Nothing on
 
     class GainFactor(Enum):
         K_GAIN_1X = 0x00
@@ -111,32 +111,32 @@ class ColorSensorV3:
         K_PULSE_25MA = 0x03
         K_PULSE_50MA = 0x04
         K_PULSE_75MA = 0x05
-        K_PULSE_100MA = 0x06 # Default value
+        K_PULSE_100MA = 0x06  # Default value
         K_PULSE_125MA = 0x07
 
-    class LEDPulseFrequency:
-        K_FREQ_60KHZ = 0x18 # Default value
+    class LEDPulseFrequency(Enum):
+        K_FREQ_60KHZ = 0x18  # Default value
         K_FREQ_70KHZ = 0x40
         K_FREQ_80KHZ = 0x28
         K_FREQ_90KHZ = 0x30
         K_FREQ_100KHZ = 0x38
 
-    class ProximitySensorResolution:
+    class ProximitySensorResolution(Enum):
         K_PROX_RES_8BIT = 0x00
         K_PROX_RES_9BIT = 0x08
         K_PROX_RES_10BIT = 0x10
         K_PROX_RES_11BIT = 0x18
 
-    class ProximitySensorMeasurementRate:
+    class ProximitySensorMeasurementRate(Enum):
         K_PROX_RATE_6MS = 0x01
         K_PROX_RATE_12MS = 0x02
         K_PROX_RATE_25MS = 0x03
         K_PROX_RATE_50MS = 0x04
-        K_PROX_RATE_100MS = 0x05 # Default value
+        K_PROX_RATE_100MS = 0x05  # Default value
         K_PROX_RATE_200MS = 0x06
         K_PROX_RATE_400MS = 0x07
 
-    class ColorSensorResolution:
+    class ColorSensorResolution(Enum):
         K_COLOR_SENSOR_RES_20BIT = 0x00
         K_COLOR_SENSOR_RES_19BIT = 0x08
         K_COLOR_SENSOR_RES_18BIT = 0x10
@@ -144,7 +144,7 @@ class ColorSensorV3:
         K_COLOR_SENSOR_RES_16BIT = 0x20
         K_COLOR_SENSOR_RES_13BIT = 0x28
 
-    class ColorSensorMeasurementRate:
+    class ColorSensorMeasurementRate(Enum):
         K_COLOR_RATE_25MS = 0
         K_COLOR_RATE_50MS = 1
         K_COLOR_RATE_100MS = 2
@@ -153,207 +153,185 @@ class ColorSensorV3:
         K_COLOR_RATE_1000MS = 5
         K_COLOR_RATE_2000MS = 7
 
-    """
-    Configure the the IR LED used by the proximity sensor.
+    def configure_proximity_sensor_led(self, freq: LEDPulseFrequency,
+                                       curr: LEDCurrent, pulses: int) -> None:
+        """
+        Configure the the IR LED used by the proximity sensor.
 
-    These settings are only needed for advanced users, the defaults
-    will work fine for most teams. Consult the APDS-9151 for more
-    information on these configuration settings and how they will affect
-    proximity sensor measurements.
+        These settings are only needed for advanced users, the defaults
+        will work fine for most teams. Consult the APDS-9151 for more
+        information on these configuration settings and how they will affect
+        proximity sensor measurements.
 
-    :param freq: The pulse modulation frequency for the proximity
-                 sensor LED
-    :param curr: The pulse current for the proximity sensor LED
-    :param pulses: The number of pulses per measurement of the
-                   proximity sensor LED (0-255)
-    """
-    def configure_proximity_sensor_led(self, freq: LEDPulseFrequency, curr: LEDCurrent, pulses: int) -> None:
-        self.write8(Register.K_PROXIMITY_SENSOR_LED, freq | curr)
-        self.write8(Register.K_PROXIMITY_SENSOR_PULSES, byte(pulses))
+        :param freq: The pulse modulation frequency for the proximity
+                     sensor LED
+        :param curr: The pulse current for the proximity sensor LED
+        :param pulses: The number of pulses per measurement of the
+                       proximity sensor LED (0-255)
+        """
+        self.__write8(self.Register.K_PROXIMITY_SENSOR_LED, freq | curr)
+        self.__write8(self.Register.K_PROXIMITY_SENSOR_PULSES, pulses)
 
-    """
-    Configure the proximity sensor.
+    def configure_proximity_sensor(
+            self, res: ProximitySensorResolution,
+            rate: ProximitySensorMeasurementRate) -> None:
+        """
+        Configure the proximity sensor.
 
-    These settings are only needed for advanced users, the defaults
-    will work fine for most teams. Consult the APDS-9151 for more
-    information on these configuration settings and how they will affect
-    proximity sensor measurements.
+        These settings are only needed for advanced users, the defaults
+        will work fine for most teams. Consult the APDS-9151 for more
+        information on these configuration settings and how they will affect
+        proximity sensor measurements.
 
-    :param res: Bit resolution output by the proximity sensor ADC.
-    :param rate: Measurement rate of the proximity sensor
-    """
-    def configure_proximity_sensor(self, res: ProximitySensorResolution, rate: ProximitySensorMeasurementRate) -> None:
-        self.write8(Register.K_PROXIMITY_SENSOR_RATE, res | rate)
+        :param res: Bit resolution output by the proximity sensor ADC.
+        :param rate: Measurement rate of the proximity sensor
+        """
+        self.__write8(self.Register.K_PROXIMITY_SENSOR_RATE, res | rate)
 
-    """
-    Configure the color sensor.
+    def configure_color_sensor(self, res: ColorSensorResolution,
+                               rate: ColorSensorMeasurementRate,
+                               gain: GainFactor) -> None:
+        """
+        Configure the color sensor.
 
-    These settings are only needed for advanced users, the defaults
-    will work fine for most teams. Consult the APDS-9151 for more
-    information on these configuration settings and how they will affect
-    color sensor measurements.
+        These settings are only needed for advanced users, the defaults
+        will work fine for most teams. Consult the APDS-9151 for more
+        information on these configuration settings and how they will affect
+        color sensor measurements.
 
-    :param res: Bit resolution output by the respective light sensor ADCs
-    :param rate: Measurement rate of the light sensor
-    :param gain: Gain factor applied to light sensor (color) outputs
-    """
-    def configure_color_sensor(self, res: ColorSensorResolution, rate: ColorSensorMeasurementRate, gain: GainFactor) -> None:
-        self.write8(Register.K_LIGHT_SENSOR_MEASUREMENT_RATE, res | rate)
-        self.write8(Register.K_LIGHT_SENSOR_GAIN, gain)
+        :param res: Bit resolution output by the respective light sensor ADCs
+        :param rate: Measurement rate of the light sensor
+        :param gain: Gain factor applied to light sensor (color) outputs
+        """
+        self.__write8(self.Register.K_LIGHT_SENSOR_MEASUREMENT_RATE,
+                      res | rate)
+        self.__write8(self.Register.K_LIGHT_SENSOR_GAIN, gain)
 
-    """
-    Get the most likely color. Works best when within 2 inches and
-    perpendicular to surface of interest.
-
-    :returns: Color enum of the most likely color, including unknown if
-              the minimum threshold is not met
-    """
     def get_color(self) -> Color:
-        r = float(self.get_red())
-        g = float(self.get_green())
-        b = float(self.get_blue())
-        mag = r + g + b
-        return ColorShim(r / mag, g / mag, b / mag)
+        """
+        Get the most likely color. Works best when within 2 inches and
+        perpendicular to surface of interest.
 
-======== END OF PROGRESS ========
+        :returns: Color enum of the most likely color, including unknown if
+                  the minimum threshold is not met
+        """
+        red = float(self.get_red())
+        green = float(self.get_green())
+        blue = float(self.get_blue())
+        mag = red + green + blue
+        return Color(red / mag, green / mag, blue / mag)
 
-    /**
-     * Get the raw proximity value from the sensor ADC (11 bit). This value 
-     * is largest when an object is close to the sensor and smallest when 
-     * far away.
-     * 
-     * @return  Proximity measurement value, ranging from 0 to 2047
-     */
-    public int getProximity() {
-        if (m_simDevice != null) {
-            return (int)m_simProx.get();
-        }
-        return read11BitRegister(Register.kProximityData);
-    }
+    def get_proximity(self) -> int:
+        """
+        Get the raw proximity value from the sensor ADC (11 bit). This value
+        is largest when an object is close to the sensor and smallest when
+        far away.
 
-    /**
-     * Get the raw color values from their respective ADCs (20-bit).
-     * 
-     * @return  ColorValues struct containing red, green, blue and IR values
-     */
-    public RawColor getRawColor() {
-        return new RawColor(getRed(), getGreen(), getBlue(), getIR());
-    }
+        :returns: Proximity measurement value, ranging from 0 to 2047
+        """
+        if self.__m_sim_device is not None:
+            return int(self.__m_sim_prox.get())
+        return self.__read_11_bit_register(self.Register.K_PROXIMITY_DATA)
 
-    /**
-     * Get the raw color value from the red ADC
-     * 
-     * @return  Red ADC value
-     */
-    public int getRed() {
-        if (m_simDevice != null) {
-            return (int)m_simR.get();
-        }
-        return read20BitRegister(Register.kDataRed);
-    }
+    def get_raw_color(self) -> self.RawColor:
+        """
+        Get the raw color values from their respective ADCs (20-bit).
 
-    /**
-     * Get the raw color value from the green ADC
-     * 
-     * @return  Green ADC value
-     */
-    public int getGreen() {
-        if (m_simDevice != null) {
-            return (int)m_simG.get();
-        }
-        return read20BitRegister(Register.kDataGreen);
-    }
+        :returns: ColorValues struct containing red, green, blue and IR values
+        """
+        return self.RawColor(self.get_red(), self.get_green(), self.get_blue(),
+                             self.get_ir())
 
-    /**
-     * Get the raw color value from the blue ADC
-     * 
-     * @return  Blue ADC value
-     */
-    public int getBlue() {
-        if (m_simDevice != null) {
-            return (int)m_simB.get();
-        }
-        return read20BitRegister(Register.kDataBlue);
-    }
+    def get_red(self) -> int:
+        """
+        Get the raw color value from the red ADC
 
-    /**
-     * Get the raw color value from the IR ADC
-     * 
-     * @return  IR ADC value
-     */
-    public int getIR() {
-        if (m_simDevice != null) {
-            return (int)m_simIR.get();
-        }
-        return read20BitRegister(Register.kDataInfrared);
-    }
+        :returns: Red ADC value
+        """
+        if self.__m_sim_device is not None:
+            return int(self.__m_sim_r.get())
+        return self.__read_20_bit_register(self.Register.K_DATA_RED)
 
-    /**
-     * Indicates if the device reset. Based on the power on status flag in the
-     * status register. Per the datasheet:
-     * 
-     * Part went through a power-up event, either because the part was turned
-     * on or because there was power supply voltage disturbance (default at 
-     * first register read).
-     * 
-     * This flag is self clearing
-     * 
-     * @return  bool indicating if the device was reset
-     */
-    public boolean hasReset() {
-        byte[] raw = new byte[1];
-    
-        m_i2c.read(Register.kMainStatus.bVal, 1, raw);
-    
-        return (raw[0] & 0x20) != 0;
-    }
-    
-    private boolean checkDeviceID() {
-        byte[] raw = new byte[1];
-        if(m_i2c.read(Register.kPartID.bVal, 1, raw)) {
-            DriverStation.reportError("Could not find REV color sensor", false);
-            return false;
-        }
+    def get_green(self) -> int:
+        """
+        Get the raw color value from the green ADC
 
-        if(kPartID != raw[0]) {
-            DriverStation.reportError("Unknown device found with same I2C addres as REV color sensor", false);
-            return false;
-        }
+        :returns: Green ADC value
+        """
+        if self.__m_sim_device is not None:
+            return int(self.__m_sim_g.get())
+        return self.__read_20_bit_register(self.Register.K_DATA_GREEN)
 
-        return true;
-    }
+    def get_blue(self) -> int:
+        """
+        Get the raw color value from the blue ADC
 
-    private void initializeDevice() {
-        write8(Register.kMainCtrl, 
-            MainControl.kRGBMode.bVal | 
-            MainControl.kLightSensorEnable.bVal | 
-            MainControl.kProximitySensorEnable.bVal);
+        :returns: Blue ADC value
+        """
+        if self.__m_sim_device is not None:
+            return int(self.__m_sim_b.get())
+        return self.__read_20_bit_register(self.Register.K_DATA_BLUE)
 
-        write8(Register.kProximitySensorRate, 
-            ProximitySensorResolution.kProxRes11bit.bVal | 
-            ProximitySensorMeasurementRate.kProxRate100ms.bVal);
+    def get_ir(self) -> int:
+        """
+        Get the raw color value from the IR ADC
 
-        write8(Register.kProximitySensorPulses, (byte) 32);
-    }
+        :returns: IR ADC value
+        """
+        if self.__m_sim_device is not None:
+            return int(self.__m_sim_ir.get())
+        return self.__read_20_bit_register(self.Register.K_DATA_INFRARED)
 
-    private int read11BitRegister(Register reg) {
-        byte[] raw = new byte[2];
-    
-        m_i2c.read(reg.bVal, 2, raw);
-    
-        return (((int)raw[0] & 0xFF) | (((int)raw[1] & 0xFF) << 8)) & 0x7FF;
-    }
+    def has_reset(self) -> bool:
+        """
+        Indicates if the device reset. Based on the power on status flag in the
+        status register. Per the datasheet:
 
-    private int read20BitRegister(Register reg) {
-        byte[] raw = new byte[3];
-    
-        m_i2c.read(reg.bVal, 3, raw);
+        Part went through a power-up event, either because the part was turned
+        on or because there was power supply voltage disturbance (default at
+        first register read).
 
-        return (((int)raw[0] & 0xFF) | (((int)raw[1] & 0xFF) << 8) |
-                (((int)raw[2] & 0xFF) << 16)) & 0x03FFFF;
-    }
+        This flag is self clearing
 
-    private void write8(Register reg, int data) {
-        m_i2c.write(reg.bVal, data);
-    }
-}
+        :returns: bool indicating if the device was reset
+        """
+        raw = list()
+        self.__m_i2c.read(self.Register.K_MAIN_STATUS, 1, raw)
+        return (raw[0] & 0x20) != 0
+
+    def __check_device_id(self) -> bool:
+        raw = list()
+        if self.__m_i2c.read(self.Register.K_PART_ID, 1, raw):
+            DriverStation.reportError("Could not find REV color sensor", False)
+            return False
+        if self.__K_PART_ID != raw[0]:
+            DriverStation.reportError(
+                "Unknown device found with same I2C address as REV color sensor",
+                False)
+            return False
+        return True
+
+    def __initialize_device(self) -> None:
+        self.__write8(
+            self.Register.K_MAIN_CTRL, self.MainControl.K_RGB_MODE
+            | self.MainControl.K_LIGHT_SENSOR_ENABLE
+            | self.MainControl.K_PROXIMITY_SENSOR_ENABLE)
+        self.__write8(
+            self.Register.K_PROXIMITY_SENSOR_RATE,
+            self.ProximitySensorResolution.K_PROX_RES_11BIT
+            | self.ProximitySensorMeasurementRate.K_PROX_RATE_100MS)
+        self.__write8(self.Register.K_PROXIMITY_SENSOR_PULSES, 32)
+
+    def __read_11_bit_register(self, reg: Register) -> int:
+        raw = list()
+        self.__m_i2c.read(reg, 2, raw)
+        return (int(raw[0] & 0xFF) | (int(raw[1] & 0xFF) << 8)) & 0x7FF
+
+    def __read_20_bit_register(self, reg: Register) -> int:
+        raw = list()
+        self.__m_i2c.read(reg, 3, raw)
+        return (int(raw[0] & 0xFF) | (int(raw[1] & 0xFF) << 8) |
+                (int(raw[2] & 0xFF) << 16)) & 0x03FFFF
+
+    def __write8(self, reg: Register, data: int) -> None:
+        self.__m_i2c.write(reg, data)
