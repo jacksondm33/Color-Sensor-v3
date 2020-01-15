@@ -169,7 +169,8 @@ class ColorSensorV3:
         :param pulses: The number of pulses per measurement of the
                        proximity sensor LED (0-255)
         """
-        self.__write8(self.Register.K_PROXIMITY_SENSOR_LED, freq | curr)
+        self.__write8(self.Register.K_PROXIMITY_SENSOR_LED,
+                      freq.value | curr.value)
         self.__write8(self.Register.K_PROXIMITY_SENSOR_PULSES, pulses)
 
     def configure_proximity_sensor(
@@ -186,7 +187,8 @@ class ColorSensorV3:
         :param res: Bit resolution output by the proximity sensor ADC.
         :param rate: Measurement rate of the proximity sensor
         """
-        self.__write8(self.Register.K_PROXIMITY_SENSOR_RATE, res | rate)
+        self.__write8(self.Register.K_PROXIMITY_SENSOR_RATE,
+                      res.value | rate.value)
 
     def configure_color_sensor(self, res: ColorSensorResolution,
                                rate: ColorSensorMeasurementRate,
@@ -204,8 +206,8 @@ class ColorSensorV3:
         :param gain: Gain factor applied to light sensor (color) outputs
         """
         self.__write8(self.Register.K_LIGHT_SENSOR_MEASUREMENT_RATE,
-                      res | rate)
-        self.__write8(self.Register.K_LIGHT_SENSOR_GAIN, gain)
+                      res.value | rate.value)
+        self.__write8(self.Register.K_LIGHT_SENSOR_GAIN, gain.value)
 
     def get_color(self) -> Color:
         """
@@ -296,12 +298,12 @@ class ColorSensorV3:
         :returns: bool indicating if the device was reset
         """
         raw = list()
-        self.__m_i2c.read(self.Register.K_MAIN_STATUS, 1, raw)
+        self.__m_i2c.read(self.Register.K_MAIN_STATUS.value, 1, raw)
         return (raw[0] & 0x20) != 0
 
     def __check_device_id(self) -> bool:
         raw = list()
-        if self.__m_i2c.read(self.Register.K_PART_ID, 1, raw):
+        if self.__m_i2c.read(self.Register.K_PART_ID.value, 1, raw):
             DriverStation.reportError("Could not find REV color sensor", False)
             return False
         if self.__K_PART_ID != raw[0]:
@@ -313,25 +315,25 @@ class ColorSensorV3:
 
     def __initialize_device(self) -> None:
         self.__write8(
-            self.Register.K_MAIN_CTRL, self.MainControl.K_RGB_MODE
-            | self.MainControl.K_LIGHT_SENSOR_ENABLE
-            | self.MainControl.K_PROXIMITY_SENSOR_ENABLE)
+            self.Register.K_MAIN_CTRL, self.MainControl.K_RGB_MODE.value
+            | self.MainControl.K_LIGHT_SENSOR_ENABLE.value
+            | self.MainControl.K_PROXIMITY_SENSOR_ENABLE.value)
         self.__write8(
             self.Register.K_PROXIMITY_SENSOR_RATE,
-            self.ProximitySensorResolution.K_PROX_RES_11BIT
-            | self.ProximitySensorMeasurementRate.K_PROX_RATE_100MS)
+            self.ProximitySensorResolution.K_PROX_RES_11BIT.value
+            | self.ProximitySensorMeasurementRate.K_PROX_RATE_100MS.value)
         self.__write8(self.Register.K_PROXIMITY_SENSOR_PULSES, 32)
 
     def __read_11_bit_register(self, reg: Register) -> int:
         raw = list()
-        self.__m_i2c.read(reg, 2, raw)
+        self.__m_i2c.read(reg.value, 2, raw)
         return (int(raw[0] & 0xFF) | (int(raw[1] & 0xFF) << 8)) & 0x7FF
 
     def __read_20_bit_register(self, reg: Register) -> int:
         raw = list()
-        self.__m_i2c.read(reg, 3, raw)
+        self.__m_i2c.read(reg.value, 3, raw)
         return (int(raw[0] & 0xFF) | (int(raw[1] & 0xFF) << 8) |
                 (int(raw[2] & 0xFF) << 16)) & 0x03FFFF
 
     def __write8(self, reg: Register, data: int) -> None:
-        self.__m_i2c.write(reg, data)
+        self.__m_i2c.write(reg.value, data)
