@@ -72,13 +72,13 @@ class ColorMatch:
         return ColorMatchResult(Color.kBlack, 0.0)
 
     @classmethod
+    def make_color(cls, red: float, green: float, blue: float) -> Color:
+        return Color(red, green, blue)
+
+    @classmethod
     def __calculate_distance(cls, color1: Color, color2: Color) -> float:
         red_diff = color1.red - color2.red
         green_diff = color1.green - color2.green
         blue_diff = color1.blue - color2.blue
         return math.sqrt((red_diff * red_diff + green_diff * green_diff +
                           blue_diff * blue_diff) / 2)
-
-    @classmethod
-    def make_color(cls, r: float, g: float, b: float) -> Color:
-        return Color(r, g, b)
